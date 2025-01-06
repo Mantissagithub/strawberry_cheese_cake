@@ -21,6 +21,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from std_msgs.msg import Int32
 from time import time
+import torch
 
 # Constants initialisations for OpenCV
 dc = DepthCamera()
@@ -32,6 +33,7 @@ gaussian_blur_ksize = (9, 9)
 canny_threshold1 = 50
 canny_threshold2 = 150
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # for better arrow tracking
 class EuclideanDistTracker:
@@ -107,13 +109,16 @@ class DirectionPublisher(Node):
         self.vel_msg = Twist()
         self.align_vel_msg = Twist()
 
-    def arrow_distance_estimation(self, focal_length, real_width, width_in_frame):
-        if width_in_frame != 0:
-            print(width_in_frame)
-            distance = (real_width * focal_length) / width_in_frame
+    def arrow_distance_estimation(self, valid, d_frame, cx, cy):
+        prev_dist = 0.0
+        depth_value = d_frame[cy, cx]
+        distance = depth_value / 10
+        if distance == 0.0:
+            distance = prev_dist
         else:
-            distance = 0
+            prev_dist = distance
         return distance
+    
 
     def control_turtlebot(self, contour, relative_position, distance):
         # Clear velocity message before setting new values
@@ -235,7 +240,7 @@ class DirectionPublisher(Node):
                             detected_arrows.append((x, y, w, h, contour, direction))
                 # global boxes_ids
             boxes_ids = tracker.update(detected_arrows)
-            distance = 0
+            distance, prev_dist = 0,0
             for boxes in boxes_ids:
                 x, y, w, h, id = boxes[:5]
                 # Draw the arrow's contour
@@ -260,7 +265,7 @@ class DirectionPublisher(Node):
                     centroid[1] - frame_height // 2,
                 )
                 distance = self.arrow_distance_estimation(
-                    self.FOCAL_LENGTH, self.REAL_ARROW_WIDTH, w
+                    ret, d_frame, centroid[0], centroid[1]
                 )
                 self.control_turtlebot(contour, relative_position, distance)
                 # Display the arrow's data
