@@ -1,0 +1,4 @@
+[console_scripts]
+controller = autonomous_stack.test_controller_final_with_sp:main
+input1 = autonomous_stack.input_with_tracking_allignment:main
+input2 = autonomous_stack.straightpath1:main
