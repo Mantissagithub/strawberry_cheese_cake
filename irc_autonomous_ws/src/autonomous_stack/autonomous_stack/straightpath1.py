@@ -8,18 +8,18 @@ import pyrealsense2 as rs
 import numpy as np
 import pygame
 
-class KalmanFilter:
-    def __init__(self, process_variance, measurement_variance):
-        self.process_variance = process_variance
-        self.measurement_variance = measurement_variance
-        self.estimated_value = 0.0
-        self.error_covariance = 1.0
+# class KalmanFilter:
+#     def __init__(self, process_variance, measurement_variance):
+#         self.process_variance = process_variance
+#         self.measurement_variance = measurement_variance
+#         self.estimated_value = 0.0
+#         self.error_covariance = 1.0
 
-    def update(self, measurement):
-        kalman_gain = self.error_covariance / (self.error_covariance + self.measurement_variance)
-        self.estimated_value += kalman_gain * (measurement - self.estimated_value)
-        self.error_covariance = (1 - kalman_gain) * self.error_covariance + self.process_variance
-        return self.estimated_value
+#     def update(self, measurement):
+#         kalman_gain = self.error_covariance / (self.error_covariance + self.measurement_variance)
+#         self.estimated_value += kalman_gain * (measurement - self.estimated_value)
+#         self.error_covariance = (1 - kalman_gain) * self.error_covariance + self.process_variance
+#         return self.estimated_value
 
 class IMUVisualizer(Node):
     def __init__(self):
@@ -45,7 +45,7 @@ class IMUVisualizer(Node):
         self.straight_path_deviation = 0.0
 
         # Kalman filter for pitch
-        self.pitch_kalman_filter = KalmanFilter(0.1, 0.1)
+        # self.pitch_kalman_filter = KalmanFilter(0.1, 0.1)
 
         # Pygame GUI
         pygame.init()
@@ -102,30 +102,36 @@ class IMUVisualizer(Node):
                 if gyro_data and accel_data:
                     # Extract gyro data for pitch (y-axis)
                     gyro_pitch_rate = gyro_data[1]  
+                    alpha = 0.01
 
-                  
                     if abs(gyro_pitch_rate) > self.gyro_drift_threshold:
                         self.pitch += gyro_pitch_rate * self.dt
+
+                    prev_pitch = 0
 
                     # Convert to degrees
                     pitch_deg = np.degrees(self.pitch)
 
+                    pitch_value = (alpha*prev_pitch) + ((1-alpha)*pitch_deg)
+                    prev_pitch = pitch_value
+
                     # Check for straight path deviation
-                    self.check_straight_path(pitch_deg)
+                    self.check_straight_path(pitch_value)
 
                     # Detect turn based on threshold
-                    if abs(pitch_deg) >= self.turn_threshold:
+                    if abs(pitch_value) >= self.turn_threshold:
                         self.publish_turn_data()
                         self.pitch = 0.0  
 
                     # Pygame display
                     self.screen.fill((0, 0, 0))
-                    pitch_text = self.font.render(f"Pitch: {pitch_deg:.2f}°", True, (255, 255, 255))
+                    pitch_text = self.font.render(f"Pitch: {pitch_value:.2f}°", True, (255, 255, 255))
                     deviation_text = self.font.render(f"Deviation: {self.straight_path_deviation:.2f}", True, (255, 255, 255))
 
                     self.screen.blit(pitch_text, (20, 50))
                     self.screen.blit(deviation_text, (20, 100))
                     pygame.display.flip()
+
 
                 self.clock.tick(10)
 
