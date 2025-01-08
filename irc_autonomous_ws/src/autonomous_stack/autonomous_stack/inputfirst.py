@@ -157,17 +157,10 @@ class DirectionPublisher(Node):
         prev_dist = 0.0
 
         # Validate coordinates
-        if 0 <= cy < d_frame.shape[0] and 0 <= cx < d_frame.shape[1]:
-            depth_value = d_frame[cy, cx]
-        else:
-            # Approximate using neighbors
-            neighbors = [
-                d_frame[ny, nx]
-                for dy in [-1, 0, 1]
-                for dx in [-1, 0, 1]
-                if 0 <= (ny := cy + dy) < d_frame.shape[0] and 0 <= (nx := cx + dx) < d_frame.shape[1]
-            ]
-            depth_value = np.mean(neighbors) if neighbors else 0
+        cx = max(0, min(cx, d_frame.shape[1] - 1))
+        cy = max(0, min(cy, d_frame.shape[0] - 1))
+
+        depth_value = d_frame[cy, cx]
 
         # Compute distance
         distance = depth_value / 10
