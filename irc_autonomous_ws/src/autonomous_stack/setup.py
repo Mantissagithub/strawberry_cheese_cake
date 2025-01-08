@@ -20,6 +20,7 @@ setup(
     entry_points={
         'console_scripts': [
             'input1 = autonomous_stack.inputfirst:main',
+            'testinput1 = autonomous_stack.imagesub:main',
             'input2=autonomous_stack.straightpath1:main',
             'controller=autonomous_stack.test_controller_final_with_sp:main',
         ],

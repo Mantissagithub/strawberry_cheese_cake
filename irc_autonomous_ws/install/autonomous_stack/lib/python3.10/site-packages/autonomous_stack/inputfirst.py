@@ -24,7 +24,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from std_msgs.msg import Int32
 from time import time
-# import torch
+import torch
 
 # Constants initialisations for OpenCV
 #dc = DepthCamera()
@@ -36,7 +36,7 @@ gaussian_blur_ksize = (9, 9)
 canny_threshold1 = 50
 canny_threshold2 = 150
 
-device = 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # for better arrow tracking
 class EuclideanDistTracker:
@@ -94,19 +94,17 @@ class DirectionPublisher(Node):
         self.get_logger().info("Direction Publisher node Chalu")
         # getting the frames from the subscribing to image raw cv2_bridge
         self.color_subscription = self.create_subscription(
-            Image,
-            '/camera/camera/color/image_raw',
-            self.color_callback,
-            10
+        Image, 
+        '/camera/camera/color/image_raw', 
+        self.color_callback, 
+        10
         )
-
         self.depth_subscription = self.create_subscription(
-            Image,
-            '/camera/camera/depth/image_rect_raw',
-            self.depth_callback,
-            10
+        Image, 
+        '/camera/camera/depth/image_rect_raw', 
+        self.depth_callback, 
+        10
         )
-
         self.bridge = CvBridge()
         self.d_frame=None
         self.frame=None
@@ -134,50 +132,21 @@ class DirectionPublisher(Node):
     def color_callback(self, color_msg):
         self.frame = self.bridge.imgmsg_to_cv2(color_msg, desired_encoding='bgr8')
 
-        self.latest_color_msg = color_msg
-        self.process_image()
+        if self.d_frame is not None:
+            self.send_cmd_vel(self,self.frame, self.d_frame)
     def depth_callback(self, depth_msg):
-        self.d_frame = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='16UC1')
-        self.latest_depth_msg = depth_msg  
-        self.process_image()
-    def process_image(self):
-        if self.frame is not None and self.d_frame is not None:
-            self.send_cmd_vel(self.frame, self.d_frame)
-    # def image_callback(self, img_msg):
-    #     if img_msg.encoding == 'bgr8':  
-    #         self.frame = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding='bgr8')
-    #         self.latest_color_msg = img_msg  
-    #     elif img_msg.encoding == '16UC1':  
-    #         self.d_frame = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding='16UC1')
-    #         self.latest_depth_msg = img_msg  
-
-    #     if self.frame is not None and self.d_frame is not None:
-    #         self.send_cmd_vel(self.frame, self.d_frame)
+        self.d_frame = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='passthrough')
+        if self.d_frame is not None:
+            self.send_cmd_vel(self,self.latest_color_msg, self.latest_depth_msg)
     def arrow_distance_estimation(self, valid, d_frame, cx, cy):
         prev_dist = 0.0
-
-        # Validate coordinates
-        if 0 <= cy < d_frame.shape[0] and 0 <= cx < d_frame.shape[1]:
-            depth_value = d_frame[cy, cx]
-        else:
-            # Approximate using neighbors
-            neighbors = [
-                d_frame[ny, nx]
-                for dy in [-1, 0, 1]
-                for dx in [-1, 0, 1]
-                if 0 <= (ny := cy + dy) < d_frame.shape[0] and 0 <= (nx := cx + dx) < d_frame.shape[1]
-            ]
-            depth_value = np.mean(neighbors) if neighbors else 0
-
-        # Compute distance
+        depth_value = d_frame[cy, cx]
         distance = depth_value / 10
         if distance == 0.0:
             distance = prev_dist
         else:
             prev_dist = distance
-
         return distance
-
     
 
     def control_turtlebot(self, contour, relative_position, distance):
@@ -223,15 +192,17 @@ class DirectionPublisher(Node):
 
     def send_cmd_vel(self, frame,d_frame):
 
+        msg1 = String()
+        msg2 = Int32()
         tracker = EuclideanDistTracker()
         # msg1 = String()
         # msg2 = Int32()
         # tracker = EuclideanDistTracker()
         # while True:
         # for img_msg to cv2
-        if frame is None or d_frame is None:
-            print("Error: One of the frames is None.")
-            return
+        frame = frame
+        d_frame = d_frame
+        ret=frame is None and d_frame is None
         cv2.imshow("ROS2 Camera Frame", frame)
         cv2.waitKey(1)
 
@@ -301,11 +272,6 @@ class DirectionPublisher(Node):
                             cx = int(M["m10"] / M["m00"])
                             cy = int(M["m01"] / M["m00"])
                             centroid = (cx, cy)
-                            if 0 <= cy < d_frame.shape[0] and 0 <= cx < d_frame.shape[1]:
-                                depth_value = d_frame[cy, cx]
-                            else:
-                                self.get_logger().error(f"Coordinates ({cx}, {cy}) are out of bounds for depth frame with shape {d_frame.shape}.")
-                                depth_value = 0
                             # Compute the bounding box around the arrow
                             x, y, w, h = cv2.boundingRect(contour)
                             # Store the detected arrow data
@@ -346,7 +312,7 @@ class DirectionPublisher(Node):
                     centroid[1] - frame_height // 2,
                 )
                 distance = self.arrow_distance_estimation(
-                    True, d_frame, centroid[0], centroid[1]
+                    ret, d_frame, centroid[0], centroid[1]
                 )
                 self.control_turtlebot(contour, relative_position, distance)
                 # Display the arrow's data

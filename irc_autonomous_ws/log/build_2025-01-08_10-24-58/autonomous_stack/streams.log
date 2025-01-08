@@ -1,0 +1,34 @@
+[0.430s] Invoking command in '/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack': PYTHONPATH=/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/autonomous_stack build --build-base /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build install --record /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/install.log --single-version-externally-managed install_data
+[0.511s] /home/pradheep/.local/lib/python3.10/site-packages/setuptools/_distutils/dist.py:270: UserWarning: Unknown distribution option: 'tests_require'
+[0.511s]   warnings.warn(msg)
+[0.564s] running egg_info
+[0.572s] writing ../../build/autonomous_stack/autonomous_stack.egg-info/PKG-INFO
+[0.572s] writing dependency_links to ../../build/autonomous_stack/autonomous_stack.egg-info/dependency_links.txt
+[0.572s] writing entry points to ../../build/autonomous_stack/autonomous_stack.egg-info/entry_points.txt
+[0.572s] writing requirements to ../../build/autonomous_stack/autonomous_stack.egg-info/requires.txt
+[0.572s] writing top-level names to ../../build/autonomous_stack/autonomous_stack.egg-info/top_level.txt
+[0.589s] reading manifest file '../../build/autonomous_stack/autonomous_stack.egg-info/SOURCES.txt'
+[0.590s] writing manifest file '../../build/autonomous_stack/autonomous_stack.egg-info/SOURCES.txt'
+[0.590s] running build
+[0.590s] running build_py
+[0.590s] copying autonomous_stack/miscellaneous.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+[0.590s] copying autonomous_stack/straightpath1.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+[0.590s] copying autonomous_stack/__init__.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+[0.590s] copying autonomous_stack/test_controller_final_with_sp.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+[0.590s] copying autonomous_stack/inputfirst.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+[0.590s] running install
+[0.593s] running install_lib
+[0.602s] copying /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack/inputfirst.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages/autonomous_stack
+[0.602s] byte-compiling /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages/autonomous_stack/inputfirst.py to inputfirst.cpython-310.pyc
+[0.604s] running install_data
+[0.604s] copying resource/autonomous_stack -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/share/ament_index/resource_index/packages
+[0.604s] copying package.xml -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/share/autonomous_stack
+[0.604s] running install_egg_info
+[0.614s] removing '/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages/autonomous_stack-0.0.0-py3.10.egg-info' (and everything under it)
+[0.614s] Copying ../../build/autonomous_stack/autonomous_stack.egg-info to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages/autonomous_stack-0.0.0-py3.10.egg-info
+[0.614s] running install_scripts
+[0.685s] Installing controller script to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/autonomous_stack
+[0.685s] Installing input1 script to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/autonomous_stack
+[0.685s] Installing input2 script to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/autonomous_stack
+[0.685s] writing list of installed files to '/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/install.log'
+[0.698s] Invoked command in '/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack' returned '0': PYTHONPATH=/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/autonomous_stack build --build-base /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build install --record /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/install.log --single-version-externally-managed install_data

@@ -1,0 +1,31 @@
+/home/pradheep/.local/lib/python3.10/site-packages/setuptools/_distutils/dist.py:270: UserWarning: Unknown distribution option: 'tests_require'
+  warnings.warn(msg)
+running egg_info
+writing ../../build/autonomous_stack/autonomous_stack.egg-info/PKG-INFO
+writing dependency_links to ../../build/autonomous_stack/autonomous_stack.egg-info/dependency_links.txt
+writing entry points to ../../build/autonomous_stack/autonomous_stack.egg-info/entry_points.txt
+writing requirements to ../../build/autonomous_stack/autonomous_stack.egg-info/requires.txt
+writing top-level names to ../../build/autonomous_stack/autonomous_stack.egg-info/top_level.txt
+reading manifest file '../../build/autonomous_stack/autonomous_stack.egg-info/SOURCES.txt'
+writing manifest file '../../build/autonomous_stack/autonomous_stack.egg-info/SOURCES.txt'
+running build
+running build_py
+copying autonomous_stack/miscellaneous.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+copying autonomous_stack/imagesub.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+copying autonomous_stack/straightpath1.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+copying autonomous_stack/__init__.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+copying autonomous_stack/test_controller_final_with_sp.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+copying autonomous_stack/inputfirst.py -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/build/lib/autonomous_stack
+running install
+running install_lib
+running install_data
+copying resource/autonomous_stack -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/share/ament_index/resource_index/packages
+copying package.xml -> /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/share/autonomous_stack
+running install_egg_info
+removing '/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages/autonomous_stack-0.0.0-py3.10.egg-info' (and everything under it)
+Copying ../../build/autonomous_stack/autonomous_stack.egg-info to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages/autonomous_stack-0.0.0-py3.10.egg-info
+running install_scripts
+Installing controller script to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/autonomous_stack
+Installing input1 script to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/autonomous_stack
+Installing input2 script to /home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/autonomous_stack
+writing list of installed files to '/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/build/autonomous_stack/install.log'

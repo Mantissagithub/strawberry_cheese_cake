@@ -1,0 +1,7 @@
+/home/pradheep/.local/lib/python3.10/site-packages/setuptools/_distutils/dist.py:270: UserWarning: Unknown distribution option: 'tests_require'
+  warnings.warn(msg)
+  File "/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/install/autonomous_stack/lib/python3.10/site-packages/autonomous_stack/inputfirst.py", line 133
+    self.frame = self.bridge.imgmsg_to_cv2(color_msg, desired_encoding='bgr8')g
+                                                                              ^
+SyntaxError: invalid syntax
+
