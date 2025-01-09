@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # for OpenCV
 import cv2
@@ -36,7 +35,8 @@ gaussian_blur_ksize = (9, 9)
 canny_threshold1 = 50
 canny_threshold2 = 150
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device used: {device}")
 
 # for better arrow tracking
 class EuclideanDistTracker:
@@ -94,17 +94,19 @@ class DirectionPublisher(Node):
         self.get_logger().info("Direction Publisher node Chalu")
         # getting the frames from the subscribing to image raw cv2_bridge
         self.color_subscription = self.create_subscription(
-        Image, 
-        '/camera/camera/color/image_raw', 
-        self.color_callback, 
-        10
+            Image,
+            '/camera/camera/color/image_raw',
+            self.color_callback,
+            10
         )
+
         self.depth_subscription = self.create_subscription(
-        Image, 
-        '/camera/camera/depth/image_rect_raw', 
-        self.depth_callback, 
-        10
+            Image,
+            '/camera/camera/depth/image_rect_raw',
+            self.depth_callback,
+            10
         )
+
         self.bridge = CvBridge()
         self.d_frame=None
         self.frame=None
@@ -115,7 +117,8 @@ class DirectionPublisher(Node):
         self.stop_published = False
         self.time_delay = 0.0
         self.last_distance_publish_time = None
-        self.model = YOLO("/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack/autonomous_stack/best.pt											")  # this is the path to the weight file
+        self.model = YOLO("/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack/autonomous_stack/best.pt")
+        self.model.to(device)  # this is the path to the weight file
         self.bounding_box_annotator = sv.BoxAnnotator()
         self.label_annotator = sv.LabelAnnotator()
         self.cone_class_id = 0
@@ -132,21 +135,43 @@ class DirectionPublisher(Node):
     def color_callback(self, color_msg):
         self.frame = self.bridge.imgmsg_to_cv2(color_msg, desired_encoding='bgr8')
 
-        if self.d_frame is not None:
-            self.send_cmd_vel(self,self.frame, self.d_frame)
+        self.latest_color_msg = color_msg
+        self.process_image()
     def depth_callback(self, depth_msg):
-        self.d_frame = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='passthrough')
-        if self.d_frame is not None:
-            self.send_cmd_vel(self,self.latest_color_msg, self.latest_depth_msg)
+        self.d_frame = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='16UC1')
+        self.latest_depth_msg = depth_msg  
+        self.process_image()
+    def process_image(self):
+        if self.frame is not None and self.d_frame is not None:
+            self.send_cmd_vel(self.frame, self.d_frame)
+    # def image_callback(self, img_msg):
+    #     if img_msg.encoding == 'bgr8':  
+    #         self.frame = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding='bgr8')
+    #         self.latest_color_msg = img_msg  
+    #     elif img_msg.encoding == '16UC1':  
+    #         self.d_frame = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding='16UC1')
+    #         self.latest_depth_msg = img_msg  
+
+    #     if self.frame is not None and self.d_frame is not None:
+    #         self.send_cmd_vel(self.frame, self.d_frame)
     def arrow_distance_estimation(self, valid, d_frame, cx, cy):
         prev_dist = 0.0
+
+        # Validate coordinates
+        cx = max(0, min(cx, d_frame.shape[1] - 1))
+        cy = max(0, min(cy, d_frame.shape[0] - 1))
+
         depth_value = d_frame[cy, cx]
+
+        # Compute distance
         distance = depth_value / 10
         if distance == 0.0:
             distance = prev_dist
         else:
             prev_dist = distance
+
         return distance
+
     
 
     def control_turtlebot(self, contour, relative_position, distance):
@@ -176,11 +201,11 @@ class DirectionPublisher(Node):
 
     def calculate_angles(self, approx):
         def angle(pt1, pt2, pt3):
-            v1 = np.array(pt1) - np.array(pt2)
-            v2 = np.array(pt3) - np.array(pt2)
-            cosine_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
-            cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
-            return np.degrees(np.arccos(cosine_angle))
+            v1 = torch.tensor(pt1, device=device) - torch.tensor(pt2, device=device)
+            v2 = torch.tensor(pt3, device=device) - torch.tensor(pt2, device=device)
+            cosine_angle = torch.dot(v1, v2) / (torch.norm(v1) * torch.norm(v2))
+            cosine_angle = torch.clamp(cosine_angle, -1.0, 1.0)
+            return torch.degrees(torch.acos(cosine_angle)).item()
 
         angles = []
         for i in range(len(approx)):
@@ -192,17 +217,15 @@ class DirectionPublisher(Node):
 
     def send_cmd_vel(self, frame,d_frame):
 
-        msg1 = String()
-        msg2 = Int32()
         tracker = EuclideanDistTracker()
         # msg1 = String()
         # msg2 = Int32()
         # tracker = EuclideanDistTracker()
         # while True:
         # for img_msg to cv2
-        frame = frame
-        d_frame = d_frame
-        ret=frame is None and d_frame is None
+        if frame is None or d_frame is None:
+            print("Error: One of the frames is None.")
+            return
         cv2.imshow("ROS2 Camera Frame", frame)
         cv2.waitKey(1)
 
@@ -272,6 +295,11 @@ class DirectionPublisher(Node):
                             cx = int(M["m10"] / M["m00"])
                             cy = int(M["m01"] / M["m00"])
                             centroid = (cx, cy)
+                            if 0 <= cy < d_frame.shape[0] and 0 <= cx < d_frame.shape[1]:
+                                depth_value = d_frame[cy, cx]
+                            else:
+                                self.get_logger().error(f"Coordinates ({cx}, {cy}) are out of bounds for depth frame with shape {d_frame.shape}.")
+                                depth_value = 0
                             # Compute the bounding box around the arrow
                             x, y, w, h = cv2.boundingRect(contour)
                             # Store the detected arrow data
@@ -312,7 +340,7 @@ class DirectionPublisher(Node):
                     centroid[1] - frame_height // 2,
                 )
                 distance = self.arrow_distance_estimation(
-                    ret, d_frame, centroid[0], centroid[1]
+                    True, d_frame, centroid[0], centroid[1]
                 )
                 self.control_turtlebot(contour, relative_position, distance)
                 # Display the arrow's data
@@ -356,7 +384,7 @@ class DirectionPublisher(Node):
             #     buffer.clear()
             # Run YOLO model on the color image
             # results = self.model(frame)[0]
-        results = self.model.predict(source=frame, verbose=False)[0]
+        results = self.model.predict(source=frame, device=device, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(results)
 
             # Filter detections: Only keep cones with high confidence

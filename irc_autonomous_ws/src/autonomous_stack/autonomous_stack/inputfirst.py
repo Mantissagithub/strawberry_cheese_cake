@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # for OpenCV
 import cv2
@@ -24,19 +23,21 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from std_msgs.msg import Int32
 from time import time
-# import torch
+import torch
+from message_filters import Subscriber, ApproximateTimeSynchronizer
 
 # Constants initialisations for OpenCV
 #dc = DepthCamera()
 # dc = cv2.VideoCapture(0)
 
 # Parameters for denoising and Canny edge detection
-median_blur_ksize = 7
-gaussian_blur_ksize = (9, 9)
-canny_threshold1 = 50
-canny_threshold2 = 150
+median_blur_ksize = 1  # Reduced kernel size for faster processing
+gaussian_blur_ksize = (1, 1)  # Reduced kernel size for faster processing
+canny_threshold1 = 100  # Adjusted threshold for faster processing
+canny_threshold2 = 200  # Adjusted threshold for faster processing
 
-device = 'cpu'
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device used: {device}")
 
 # for better arrow tracking
 class EuclideanDistTracker:
@@ -93,20 +94,12 @@ class DirectionPublisher(Node):
         #self.create_timer(1, self.send_cmd_vel)
         self.get_logger().info("Direction Publisher node Chalu")
         # getting the frames from the subscribing to image raw cv2_bridge
-        self.color_subscription = self.create_subscription(
-            Image,
-            '/camera/camera/color/image_raw',
-            self.color_callback,
-            10
+        self.color_sub = Subscriber(self, Image, '/camera/camera/color/image_raw')
+        self.depth_sub = Subscriber(self, Image, '/camera/camera/depth/image_rect_raw')
+        self.sync = ApproximateTimeSynchronizer(
+            [self.color_sub, self.depth_sub], queue_size=10, slop=0.1, allow_headerless=True
         )
-
-        self.depth_subscription = self.create_subscription(
-            Image,
-            '/camera/camera/depth/image_rect_raw',
-            self.depth_callback,
-            10
-        )
-
+        self.sync.registerCallback(self.synced_callback)
         self.bridge = CvBridge()
         self.d_frame=None
         self.frame=None
@@ -117,7 +110,8 @@ class DirectionPublisher(Node):
         self.stop_published = False
         self.time_delay = 0.0
         self.last_distance_publish_time = None
-        self.model = YOLO("/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack/autonomous_stack/best.pt											")  # this is the path to the weight file
+        self.model = YOLO("/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack/autonomous_stack/best.pt")
+        self.model.to(device)  # this is the path to the weight file
         self.bounding_box_annotator = sv.BoxAnnotator()
         self.label_annotator = sv.LabelAnnotator()
         self.cone_class_id = 0
@@ -131,18 +125,28 @@ class DirectionPublisher(Node):
         self.latest_color_msg = None
         self.latest_depth_msg = None
     
-    def color_callback(self, color_msg):
+    # def color_callback(self, color_msg):
+    #     new_frame = self.bridge.imgmsg_to_cv2(color_msg, desired_encoding='bgr8')
+    #     self.frame = cv2.resize(new_frame, (1280, 720))
+    #     self.latest_color_msg = color_msg
+    #     self.process_image()
+    # def depth_callback(self, depth_msg):
+    #     new_d_frame = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='16UC1')
+    #     self.d_frame = cv2.resize(new_d_frame, (1280, 720))
+    #     self.latest_depth_msg = depth_msg  
+    #     self.process_image()
+    def synced_callback(self, color_msg, depth_msg):
         self.frame = self.bridge.imgmsg_to_cv2(color_msg, desired_encoding='bgr8')
-
-        self.latest_color_msg = color_msg
-        self.process_image()
-    def depth_callback(self, depth_msg):
         self.d_frame = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='16UC1')
-        self.latest_depth_msg = depth_msg  
+
+        self.frame = cv2.resize(self.frame, (1280, 720))
+        self.d_frame = cv2.resize(self.d_frame, (1280, 720))
+
         self.process_image()
     def process_image(self):
         if self.frame is not None and self.d_frame is not None:
             self.send_cmd_vel(self.frame, self.d_frame)
+
     # def image_callback(self, img_msg):
     #     if img_msg.encoding == 'bgr8':  
     #         self.frame = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding='bgr8')
@@ -170,7 +174,14 @@ class DirectionPublisher(Node):
             prev_dist = distance
 
         return distance
-
+        # depth_tensor = torch.from_numpy(d_frame).to(device).float()
+        # cx = torch.clamp(torch.tensor(cx, device=device), 0, depth_tensor.shape[1] - 1).int()
+        # cy = torch.clamp(torch.tensor(cy, device=device), 0, depth_tensor.shape[0] - 1).int()
+        # depth_value = depth_tensor[cy, cx]
+        # distance = depth_value / 10.0
+        # if distance == 0.0:
+        #     distance = prev_dist
+        # return distance
     
 
     def control_turtlebot(self, contour, relative_position, distance):
@@ -200,11 +211,14 @@ class DirectionPublisher(Node):
 
     def calculate_angles(self, approx):
         def angle(pt1, pt2, pt3):
-            v1 = np.array(pt1) - np.array(pt2)
-            v2 = np.array(pt3) - np.array(pt2)
-            cosine_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
-            cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
-            return np.degrees(np.arccos(cosine_angle))
+    # Convert to float tensors explicitly
+            v1 = torch.tensor(pt1, dtype=torch.float32, device=device) - torch.tensor(pt2, dtype=torch.float32, device=device)
+            v2 = torch.tensor(pt3, dtype=torch.float32, device=device) - torch.tensor(pt2, dtype=torch.float32, device=device)
+            
+            # Ensure floating-point calculations
+            cosine_angle = torch.dot(v1, v2) / (torch.norm(v1) * torch.norm(v2))
+            cosine_angle = torch.clamp(cosine_angle, -1.0, 1.0)
+            return (torch.acos(cosine_angle) * 180 / torch.pi).item()
 
         angles = []
         for i in range(len(approx)):
@@ -225,7 +239,7 @@ class DirectionPublisher(Node):
         if frame is None or d_frame is None:
             print("Error: One of the frames is None.")
             return
-        cv2.imshow("ROS2 Camera Frame", frame)
+        # cv2.imshow("ROS2 Camera Frame", frame)
         cv2.waitKey(1)
 
     # Rest of the processing logic from send_cmd_vel
@@ -278,6 +292,9 @@ class DirectionPublisher(Node):
 
                 # Check if it's arrow-like (with 7 vertices)
                 x, y, w, h = cv2.boundingRect(contour)
+                aspect_ratio = float(w) / h
+                if not (0.5 < aspect_ratio < 2.0):
+                    continue
                 if len(approx) == 7:
                     angles = self.calculate_angles(approx)
                     tip_angle1, tip_angle2, tip_angle3 = angles[0], angles[1], angles[2]
@@ -383,7 +400,7 @@ class DirectionPublisher(Node):
             #     buffer.clear()
             # Run YOLO model on the color image
             # results = self.model(frame)[0]
-        results = self.model.predict(source=frame, verbose=False)[0]
+        results = self.model.predict(source=frame, device=device, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(results)
 
             # Filter detections: Only keep cones with high confidence
