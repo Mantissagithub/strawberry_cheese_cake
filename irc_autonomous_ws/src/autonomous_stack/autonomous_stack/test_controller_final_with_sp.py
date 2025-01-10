@@ -106,11 +106,11 @@ class Controller(Node):
             else:
                 if self.direction == "Right":
                     self.linear_velocity = 0.0
-                    self.angular_velocity = 1.0
+                    self.angular_velocity = -1.0
                     self.get_logger().info("Turning Right")
                 elif self.direction == "Left":
                     self.linear_velocity = 0.0
-                    self.angular_velocity = -1.0
+                    self.angular_velocity = 1.0
                     self.get_logger().info("Turning Left")
 
         elif self.distance_received:

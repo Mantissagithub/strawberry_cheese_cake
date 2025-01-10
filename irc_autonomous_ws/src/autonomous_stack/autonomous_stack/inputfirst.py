@@ -110,7 +110,7 @@ class DirectionPublisher(Node):
         self.stop_published = False
         self.time_delay = 0.0
         self.last_distance_publish_time = None
-        self.model = YOLO("/home/pradheep/Documents/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack/autonomous_stack/best.pt")
+        self.model = YOLO("/home/my_eyes_are_bad/Desktop/strawberry_cheese_cake/irc_autonomous_ws/src/autonomous_stack/autonomous_stack/best.pt")
         self.model.to(device)  # this is the path to the weight file
         self.bounding_box_annotator = sv.BoxAnnotator()
         self.label_annotator = sv.LabelAnnotator()
@@ -159,10 +159,6 @@ class DirectionPublisher(Node):
     #         self.send_cmd_vel(self.frame, self.d_frame)
     def arrow_distance_estimation(self, valid, d_frame, cx, cy):
         prev_dist = 0.0
-
-        # Validate coordinates
-        cx = max(0, min(cx, d_frame.shape[1] - 1))
-        cy = max(0, min(cy, d_frame.shape[0] - 1))
 
         depth_value = d_frame[cy, cx]
 

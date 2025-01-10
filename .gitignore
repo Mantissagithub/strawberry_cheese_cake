@@ -1,6 +1,4 @@
-/build
-/install
-/log
-irc_autonomous_ws/build
-irc_autonomous_ws/install
-irc_autonomous_ws/log
+**/build
+**/install
+**/log
+**/.vscode
