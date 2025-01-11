@@ -6,6 +6,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String, Int32
 from std_msgs.msg import Int32
 import sys
+import time
 
 class Controller(Node):
     def __init__(self):
@@ -21,6 +22,8 @@ class Controller(Node):
         self.turn_complete_time = 0.0
         self.rover_aligned = False
         self.straight_path_no = False
+        self.prev_angular_velocity = 0.0
+        self.prev_linear_velocity = 0.0
         self.direction_subscriber = self.create_subscription(
             String, "direction", self.direction_callback, 10
         )
@@ -58,16 +61,17 @@ class Controller(Node):
         self.direction_received = True
         self.direction = msg.data
         self.get_logger().info("Direction topic received")
-        self.direction_time = self.get_clock().now().nanoseconds / 1e9
+        # self.direction_time = self.get_clock().now().nanoseconds / 1e9
 
     def distance_callback(self, msg):
         self.distance_received = True
-        self.distance_time = self.get_clock().now().nanoseconds / 1e9
+        self.distance = msg.data
+        # self.distance_time = self.get_clock().now().nanoseconds / 1e9
         self.get_logger().info("Distance topic received")
 
     def turn_complete_callback(self, msg):
         self.turn_complete_received = True
-        self.turn_complete_time = self.get_clock().now().nanoseconds / 1e9
+        # self.turn_complete_time = self.get_clock().now().nanoseconds / 1e9
         self.direction_received = False
         self.get_logger().info("Turn complete topic received")
 
@@ -99,21 +103,20 @@ class Controller(Node):
             self.get_logger().info("Turn complete, now moving forward")
 
         elif self.direction_received:
-            if self.get_clock().now().nanoseconds / 1e9 - self.direction_time < 3.0:
+                # self.linear_velocity = 0.0
+                # self.angular_velocity = 0.0
+                # self.get_logger().info("Waiting for direction stability")
+            time.sleep(3.0)
+            if self.direction == "Right":
                 self.linear_velocity = 0.0
-                self.angular_velocity = 0.0
-                self.get_logger().info("Waiting for direction stability")
-            else:
-                if self.direction == "Right":
-                    self.linear_velocity = 0.0
-                    self.angular_velocity = -1.0
-                    self.get_logger().info("Turning Right")
-                elif self.direction == "Left":
-                    self.linear_velocity = 0.0
-                    self.angular_velocity = 1.0
-                    self.get_logger().info("Turning Left")
+                self.angular_velocity = 1.0
+                self.get_logger().info("Turning Right")
+            elif self.direction == "Left":
+                self.linear_velocity = 0.0
+                self.angular_velocity = -1.0
+                self.get_logger().info("Turning Left")
 
-        elif self.distance_received:
+        elif self.distance_received and self.distance != 0:
             self.linear_velocity = 1.0
             self.angular_velocity = 0.0
             self.distance_received = False
@@ -129,8 +132,15 @@ class Controller(Node):
         elif not self.straight_path_no: 
             self.linear_velocity = 1.0
             self.angular_velocity = 0.0
+        # else:
+        #     if self.linear_velocity == self.prev_linear_velocity or self.angular_velocity == self.prev_angular_velocity:
+        #         self.get_logger().info(f"Linear Velocity: {self.linear_velocity}, Angular Velocity: {self.angular_velocity}")
+        #         return
+        
+        # if self.linear_velocity != self.prev_linear_velocity and self.angular_velocity != self.prev_angular_velocity:
 
-
+        self.prev_linear_velocity = self.linear_velocity
+        self.prev_angular_velocity = self.angular_velocity
         self.cmd_vel.linear.x = self.linear_velocity
         self.cmd_vel.angular.z = self.angular_velocity
         self.cmd_vel_publisher.publish(self.cmd_vel)
@@ -141,7 +151,7 @@ def main(args=None):
     try:
         rclpy.spin(controller)
     except KeyboardInterrupt:
-        controller.get_logger().info("Keyboard Interrupt (SIGINT)")
+        controller.get_logger().info("Keyboard Interrupt Ctrl+C")
     finally:
         controller.destroy_node()
         rclpy.shutdown()

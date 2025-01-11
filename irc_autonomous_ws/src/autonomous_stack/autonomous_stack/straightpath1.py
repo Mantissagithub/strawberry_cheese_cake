@@ -47,6 +47,7 @@ class IMUVisualizer(Node):
         self.straight_path_deviation = 0.0
 
         self.distance = 0.0
+        self.prev_pitch = 0
 
         # Kalman filter for pitch
         #self.pitch_kalman_filter = KalmanFilter(0.1, 0.1)
@@ -116,10 +117,9 @@ class IMUVisualizer(Node):
 
                     if abs(gyro_pitch_rate) > self.gyro_drift_threshold:
                         self.pitch += gyro_pitch_rate * self.dt
-                    prev_pitch = 0
                     # Convert to degrees
                     pitch_deg = np.degrees(self.pitch)
-                    pitch_value = (alpha*prev_pitch) +((1-alpha)*pitch_deg)
+                    pitch_value = (alpha*self.prev_pitch) +((1-alpha)*pitch_deg)
 
                     # Check for straight path deviation
                     self.check_straight_path(pitch_value)
@@ -136,6 +136,7 @@ class IMUVisualizer(Node):
 
                     self.screen.blit(pitch_text, (20, 50))
                     self.screen.blit(deviation_text, (20, 100))
+                    self.prev_pitch = pitch_value
                     pygame.display.flip()
 
                 self.clock.tick(10)
