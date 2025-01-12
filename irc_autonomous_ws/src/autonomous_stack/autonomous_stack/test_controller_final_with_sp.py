@@ -73,6 +73,8 @@ class Controller(Node):
         self.turn_complete_received = True
         # self.turn_complete_time = self.get_clock().now().nanoseconds / 1e9
         self.direction_received = False
+        self.aligned = False
+        self.rover_aligned = False
         self.get_logger().info("Turn complete topic received")
 
     def stop_callback(self, msg):
@@ -117,16 +119,17 @@ class Controller(Node):
                 self.get_logger().info("Turning Left")
 
         elif self.distance_received:
-            self.linear_velocity = 1.0
+            self.linear_velocity = 0.8
             self.angular_velocity = 0.0
             self.distance_received = False
             self.get_logger().info("Distance received")
 
         elif (not (self.direction_received or self.aligned or self.distance_received or self.turn_complete_received)) and self.straight_path_no:
             self.linear_velocity = 0.0
-            #self.angular_velocity = float(self.deviation) 
+            # self.angular_velocity = float(self.deviation) 
             self.angular_velocity = -0.5 if self.deviation < 0 else 0.5
             self.straight_path_no = False
+            self.turn_complete_received = False
             self.get_logger().info(f"Following straight path with deviation: {self.deviation}")
 
         elif not self.straight_path_no: 
@@ -139,8 +142,8 @@ class Controller(Node):
         
         # if self.linear_velocity != self.prev_linear_velocity and self.angular_velocity != self.prev_angular_velocity:
 
-        self.prev_linear_velocity = self.linear_velocity
-        self.prev_angular_velocity = self.angular_velocity
+        # self.prev_linear_velocity = self.linear_velocity
+        # self.prev_angular_velocity = self.angular_velocity
         self.cmd_vel.linear.x = self.linear_velocity
         self.cmd_vel.angular.z = self.angular_velocity
         self.cmd_vel_publisher.publish(self.cmd_vel)

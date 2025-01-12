@@ -40,13 +40,13 @@ class IMUVisualizer(Node):
 
         self.pitch = 0.0
         self.dt = 0.1
-        self.gyro_drift_threshold = 0.01  
+        self.gyro_drift_threshold = 0.01
 
-        self.deviation_threshold = 10.0
+        self.deviation_threshold = 7.0
         self.turn_threshold = 90.0
         self.straight_path_deviation = 0.0
 
-        self.distance = 0.0
+        self.distance = 301.0
         self.prev_pitch = 0
 
         # Kalman filter for pitch
@@ -96,7 +96,7 @@ class IMUVisualizer(Node):
 
             msg = Int32()
             msg.data = int(self.straight_path_deviation)
-            if self.distance > 170:
+            if self.distance > 300.0:
                 self.straight_path_publisher.publish(msg)
                 self.get_logger().info(f"Straight Path Deviation Published: {msg.data}")
 
@@ -112,13 +112,22 @@ class IMUVisualizer(Node):
                 gyro_data, accel_data = self.get_motion_data()
                 if gyro_data and accel_data:
                     # Extract gyro data for pitch (y-axis)
-                    gyro_pitch_rate = gyro_data[1]  
+                    gyro_pitch_rate = gyro_data[1]  # Y-axis rotation rate
+                    accel_x = accel_data[0]
+                    accel_y = accel_data[1]
+                    accel_z = accel_data[2]
 
+                    alpha1 = 0.98  
 
-                    if abs(gyro_pitch_rate) > self.gyro_drift_threshold:
-                        self.pitch += gyro_pitch_rate * self.dt
+                    accel_pitch = np.arctan2(accel_y, np.sqrt(accel_x**2 + accel_z**2))
+
+                    gyro_pitch_angle = self.pitch + gyro_pitch_rate * self.dt
+
+                    self.pitch = alpha1 * gyro_pitch_angle + (1 - alpha1) * accel_pitch
+
                     # Convert to degrees
                     pitch_deg = np.degrees(self.pitch)
+                    
                     pitch_value = (alpha*self.prev_pitch) +((1-alpha)*pitch_deg)
 
                     # Check for straight path deviation

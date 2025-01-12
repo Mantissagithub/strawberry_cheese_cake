@@ -143,7 +143,7 @@ class DirectionPublisher(Node):
         # self.align_vel_msg.angular.z = 0.0
 
         # Set angular velocity based on relative position (left/right)
-        if 70 < distance < 170:
+        if 80 < distance < 300:
             if relative_position[0] < -40:  # Move left
                 self.align_vel_msg.linear.x = 0.0
                 self.align_vel_msg.angular.z = 0.5
@@ -301,7 +301,7 @@ class DirectionPublisher(Node):
                 # cv2.circle(frame, tip, 5, (0, 0, 255), -1)
                 cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
 
-            if not self.distance_published and 50 <= distance <= 70:
+            if not self.distance_published and 50 <= distance <= 80:
                 msg2.data = int(distance)
                 self.distance_threshold.publish(msg=msg2)
                 self.get_logger().info(f"Distance published is: {distance}")
