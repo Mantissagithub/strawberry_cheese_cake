@@ -146,12 +146,12 @@ class DirectionPublisher(Node):
         if 70 < distance < 170:
             if relative_position[0] < -40:  # Move left
                 self.align_vel_msg.linear.x = 0.0
-                self.align_vel_msg.angular.z = -0.5
+                self.align_vel_msg.angular.z = 0.5
                 self.get_logger().info(f"{self.align_vel_msg}")
                 self.align_publisher.publish(self.align_vel_msg)
             elif relative_position[0] > 40:  # Move right
                 self.align_vel_msg.linear.x = 0.0
-                self.align_vel_msg.angular.z = 0.5
+                self.align_vel_msg.angular.z = -0.5
                 self.get_logger().info(f"{self.align_vel_msg}")
                 self.align_publisher.publish(self.align_vel_msg)
             # else:
@@ -259,7 +259,7 @@ class DirectionPublisher(Node):
                             detected_arrows.append((x, y, w, h, contour, direction))
                 # global boxes_ids
             boxes_ids = tracker.update(detected_arrows)
-            distance, prev_dist = 0,0
+            distance = 0
             for boxes in boxes_ids:
                 x, y, w, h, id = boxes[:5]
                 # Draw the arrow's contour

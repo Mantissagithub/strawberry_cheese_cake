@@ -106,23 +106,23 @@ class Controller(Node):
                 # self.linear_velocity = 0.0
                 # self.angular_velocity = 0.0
                 # self.get_logger().info("Waiting for direction stability")
-            time.sleep(3.0)
+            # time.sleep(3.0)
             if self.direction == "Right":
                 self.linear_velocity = 0.0
-                self.angular_velocity = 1.0
+                self.angular_velocity = -0.7
                 self.get_logger().info("Turning Right")
             elif self.direction == "Left":
                 self.linear_velocity = 0.0
-                self.angular_velocity = -1.0
+                self.angular_velocity = 0.7
                 self.get_logger().info("Turning Left")
 
-        elif self.distance_received and self.distance != 0:
+        elif self.distance_received:
             self.linear_velocity = 1.0
             self.angular_velocity = 0.0
             self.distance_received = False
             self.get_logger().info("Distance received")
 
-        elif not (self.direction_received or self.aligned or self.distance_received or self.turn_complete_received) and self.straight_path_no:
+        elif (not (self.direction_received or self.aligned or self.distance_received or self.turn_complete_received)) and self.straight_path_no:
             self.linear_velocity = 0.0
             #self.angular_velocity = float(self.deviation) 
             self.angular_velocity = -0.5 if self.deviation < 0 else 0.5

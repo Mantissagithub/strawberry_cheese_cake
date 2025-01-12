@@ -138,7 +138,6 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 import serial
 
-
 class CmdVelToArduino(Node):
     def __init__(self):
         super().__init__("cmd_vel_to_arduino")
@@ -146,13 +145,18 @@ class CmdVelToArduino(Node):
             Twist, "/cmd_vel", self.listener_callback, 10
         )
         self.subscription  # prevent unused variable warning
-        self.serial_port = serial.Serial(
-            "/dev/ttyUSB0", 115200
-        )  # Adjust the port name and baud rate as needed
+        
+        try:
+            self.serial_port = serial.Serial(
+                "/dev/ttyUSB0", 115200
+            )  # Adjust the port name and baud rate as needed
+        except serial.SerialException as e:
+            self.get_logger().error(f"Serial port error: {e}")
+            raise
 
         # Store previous PWM values
-        self.prev_left_pwm = 0
-        self.prev_right_pwm = 0
+        self.prev_left_pwm = None
+        self.prev_right_pwm = None
 
     def listener_callback(self, msg):
         linear_velocity = msg.linear.x * 1
@@ -162,28 +166,26 @@ class CmdVelToArduino(Node):
         left_pwm = int(((linear_velocity) + (angular_velocity)) * 100)
         right_pwm = int(((linear_velocity) - (angular_velocity)) * 100)
 
-        # # Constrain the PWM values to be within the valid range
-        # left_pwm = max(-255, min(255, left_pwm))
-        # right_pwm = max(-255, min(255, right_pwm))
-
-        # Send the PWM values to the Arduino only if they differ from the previous values
-        # if (left_pwm != self.prev_left_pwm) or (right_pwm != self.prev_right_pwm):
-        self.serial_port.write(f"{left_pwm},{right_pwm}\n".encode())
-        print(f"{left_pwm},{right_pwm}\n")
-        print(f"prev values: {self.prev_left_pwm}, {self.prev_right_pwm}")
-
-        # Update the previous values
-        self.prev_left_pwm = left_pwm
-        self.prev_right_pwm = right_pwm
+        # Send PWM values only if they have changed
+        if left_pwm != self.prev_left_pwm or right_pwm != self.prev_right_pwm:
+            try:
+                self.serial_port.write(f"{left_pwm},{right_pwm}\n".encode())
+                self.get_logger().info(f"Sent PWM: {left_pwm},{right_pwm}")
+                
+                # Update the previous values
+                self.prev_left_pwm = left_pwm
+                self.prev_right_pwm = right_pwm
+            except serial.SerialException as e:
+                self.get_logger().error(f"Error sending serial data: {e}")
 
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CmdVelToArduino()
     try:
+        node = CmdVelToArduino()
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+    except Exception as e:
+        print(f"An error occurred: {e}")
     finally:
         node.destroy_node()
         rclpy.shutdown()

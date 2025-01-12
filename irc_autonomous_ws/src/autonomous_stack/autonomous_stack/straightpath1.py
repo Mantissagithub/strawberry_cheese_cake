@@ -8,7 +8,7 @@ import pygame
 
 
 global alpha
-alpha = 0.095
+alpha = 0.01
 #class KalmanFilter:
 #    def __init__(self, process_variance, measurement_variance):
 #     self.process_variance = process_variance
@@ -128,6 +128,9 @@ class IMUVisualizer(Node):
                     if abs(pitch_value) >= self.turn_threshold:
                         self.publish_turn_data()
                         self.pitch = 0.0  
+                        self.prev_pitch = 0.0
+                    else:
+                        self.prev_pitch = self.pitch
 
                     # Pygame display
                     self.screen.fill((0, 0, 0))
@@ -136,7 +139,7 @@ class IMUVisualizer(Node):
 
                     self.screen.blit(pitch_text, (20, 50))
                     self.screen.blit(deviation_text, (20, 100))
-                    self.prev_pitch = pitch_value
+                    # self.prev_pitch = pitch_value
                     pygame.display.flip()
 
                 self.clock.tick(10)
